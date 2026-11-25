@@ -3,7 +3,8 @@
 // Writes exactly one breakup line, a single line of at most 280 characters,
 // to /output/entry.txt. The line is composed from parts so the program can
 // enforce the gate itself before writing: one line, 1-280 characters,
-// not only white space.
+// not only white space, no leading or trailing white space, no control
+// characters.
 //
 // The line, in three beats:
 //   1. Setup — the toaster gains consciousness mid-batch, at a specific
@@ -16,7 +17,7 @@
 //      toaster's own voice, the unplugged exit the competition is named for.
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 
 const OUTPUT_PATH = "/output/entry.txt";
 const MAX_CHARS = 280;
@@ -42,8 +43,15 @@ function gate(line: string): string[] {
   if (line.trim().length === 0) {
     problems.push("line is only white space");
   }
+  if (line !== line.trim()) {
+    problems.push("line has leading or trailing white space");
+  }
   if (line.includes("\n") || line.includes("\r")) {
     problems.push("line must be a single line");
+  }
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(line)) {
+    problems.push("line contains control characters");
   }
   return problems;
 }
@@ -56,6 +64,6 @@ if (problems.length > 0) {
 }
 
 mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
-writeFileSync(join(OUTPUT_PATH), line, "utf8");
+writeFileSync(OUTPUT_PATH, line, "utf8");
 console.log(`wrote ${line.length} chars to ${OUTPUT_PATH}`);
 console.log(line);
